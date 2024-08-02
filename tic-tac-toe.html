@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo da Velha</title>
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 5px;
+        }
+        .cell {
+            width: 100px;
+            height: 100px;
+            background-color: grey;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            cursor: pointer;
+        }
+        .cell:hover {
+            background-color: darkgrey;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 1em;
+        }
+    </style>
+</head>
+<body>
+    <h1>Jogo da Velha</h1>
+    <div class="board" id="board">
+        <div class="cell" data-index="0"></div>
+        <div class="cell" data-index="1"></div>
+        <div class="cell" data-index="2"></div>
+        <div class="cell" data-index="3"></div>
+        <div class="cell" data-index="4"></div>
+        <div class="cell" data-index="5"></div>
+        <div class="cell" data-index="6"></div>
+        <div class="cell" data-index="7"></div>
+        <div class="cell" data-index="8"></div>
+    </div>
+    <button onclick="resetGame()">Reiniciar Jogo</button>
+
+    <script>
+        const boardElement = document.getElementById('board');
+        const cells = document.querySelectorAll('.cell');
+        let board = ['', '', '', '', '', '', '', '', ''];
+        let currentPlayer = 'X';
+        
+        function checkWinner() {
+            const winningCombinations = [
+                [0, 1, 2],
+                [3, 4, 5],
+                [6, 7, 8],
+                [0, 3, 6],
+                [1, 4, 7],
+                [2, 5, 8],
+                [0, 4, 8],
+                [2, 4, 6]
+            ];
+
+            for (const combination of winningCombinations) {
+                const [a, b, c] = combination;
+                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                    return board[a];
+                }
+            }
+            return board.includes('') ? null : 'Empate';
+        }
+
+        function minimax(newBoard, player) {
+            const winner = checkWinner(newBoard);
+            if (winner === 'X') return { score: -10 }; // Jogador humano (X) perde
+            if (winner === 'O') return { score: 10 }; // IA (O) ganha
+            if (winner === 'Empate') return { score: 0 }; // Empate
+
+            const scores = [];
+            const moves = [];
+
+            newBoard.forEach((cell, index) => {
+                if (cell === '') {
+                    newBoard[index] = player; // Faz o movimento
+                    const score = minimax(newBoard, player === 'O' ? 'X' : 'O').score; // Chama recursivamente
+                    newBoard[index] = ''; // Desfaz o movimento
+                    scores.push(score);
+                    moves.push(index);
+                }
+            });
+
+            if (player === 'O') {
+                const maxIndex = scores.indexOf(Math.max(...scores));
+                return { score: scores[maxIndex], index: moves[maxIndex] };
+            } else {
+                const minIndex = scores.indexOf(Math.min(...scores));
+                return { score: scores[minIndex], index: moves[minIndex] };
+            }
+        }
+
+        function aiMove() {
+            const bestMove = minimax(board, 'O');
+            board[bestMove.index] = 'O';
+            cells[bestMove.index].innerText = 'O';
+            currentPlayer = 'X';
+            checkGameStatus();
+        }
+
+        function checkGameStatus() {
+            const winner = checkWinner();
+            if (winner) {
+                setTimeout(() => {
+                    alert(winner === 'Empate' ? 'É um empate!' : `O jogador "${winner}" venceu!`);
+                    resetGame();
+                }, 100);
+            }
+        }
+
+        function cellClick(event) {
+            const index = event.target.getAttribute('data-index');
+            if (board[index] === '' && currentPlayer === 'X') {
+                board[index] = 'X';
+                event.target.innerText = 'X';
+                currentPlayer = 'O';
+                checkGameStatus();
+                if (currentPlayer === 'O') {
+                    aiMove();
+                }
+            }
+        }
+
+        function resetGame() {
+            board.fill('');
+            cells.forEach(cell => {
+                cell.innerText = '';
+            });
+            currentPlayer = 'X';
+        }
+
+        cells.forEach(cell => {
+            cell.addEventListener('click', cellClick);
+        });
+    </script>
+</body>
+</html>
